@@ -1,0 +1,482 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  ARCHIVED
+}
+
+enum LinkType {
+  INTERNAL
+  EXTERNAL
+}
+
+enum Language {
+  EN
+  NP
+}
+
+enum PostType {
+  NEWS
+  NOTICE
+  PRESS_RELEASE
+  ACTIVITY
+  PUBLICATION
+  PAGE
+}
+
+enum Visibility {
+  PUBLIC
+  ADMIN_ONLY
+}
+
+enum DownloadSourceType {
+  UPLOAD
+  EXTERNAL
+}
+
+enum PageTemplate {
+  STANDARD
+  GALLERY_INDEX
+  COMMITTEE_DIRECTORY
+  DOWNLOADS_INDEX
+  EVENTS_INDEX
+}
+
+//
+// USERS
+//
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         UserRole  @default(EDITOR)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+
+  createdPosts     Post[]         @relation("PostCreatedBy")
+  updatedPosts     Post[]         @relation("PostUpdatedBy")
+  createdEvents    Event[]        @relation("EventCreatedBy")
+  updatedEvents    Event[]        @relation("EventUpdatedBy")
+  createdDownloads Download[]     @relation("DownloadCreatedBy")
+  updatedDownloads Download[]     @relation("DownloadUpdatedBy")
+  createdAlbums    GalleryAlbum[] @relation("AlbumCreatedBy")
+  updatedAlbums    GalleryAlbum[] @relation("AlbumUpdatedBy")
+  uploadedMedia    Media[]        @relation("MediaUploadedBy")
+  updatedSettings  SiteSetting[]  @relation("SettingUpdatedBy")
+  auditLogs        AuditLog[]
+  loginSession     AdminSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminSession {
+  id         String   @id @default(cuid())
+  tokenHash  String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+  ip         String?
+  userAgent  String?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+//
+// MEDIA
+//
+
+model Media {
+  id           String @id @default(uuid())
+  originalName String
+  storedName   String
+  path         String
+  url          String
+  mimeType     String
+
+  uploadedById String?
+  uploadedBy   User?   @relation("MediaUploadedBy", fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  // Opposite relations
+  postCoverImages  Post[]         @relation("PostCoverMedia")
+  postOgImages     Post[]         @relation("PostOgMedia")
+  eventCoverImages Event[]        @relation("EventCoverMedia")
+  albumCoverImages GalleryAlbum[] @relation("AlbumCoverMedia")
+  downloadFiles    Download[]     @relation("DownloadMedia")
+  galleryPhotos    GalleryPhoto[] @relation("GalleryPhotoMedia")
+
+  postAttachments  PostAttachment[]
+  eventAttachments EventAttachment[]
+
+  createdAt DateTime @default(now())
+
+  @@index([mimeType])
+}
+
+//
+// MENU
+//
+
+model Menu {
+  id       String  @id @default(uuid())
+  key      String  @unique
+  name     String
+  isActive Boolean @default(true)
+
+  items MenuItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MenuItem {
+  id     String @id @default(uuid())
+  menuId String
+  menu   Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
+
+  parentId String?
+  parent   MenuItem?  @relation("MenuItemChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children MenuItem[] @relation("MenuItemChildren")
+
+  order Int
+
+  label        String
+  url          String?
+  linkType     LinkType @default(INTERNAL)
+  openInNewTab Boolean  @default(false)
+  isActive     Boolean  @default(true)
+
+  description String?
+  icon        String?
+  badgeText   String?
+  visibility  Visibility @default(PUBLIC)
+  lang        Language?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([menuId, parentId, order])
+  @@index([menuId, isActive])
+}
+
+//
+// POSTS
+//
+
+model Post {
+  id     String     @id @default(uuid())
+  type   PostType
+  status PostStatus @default(DRAFT)
+  lang   Language
+
+  title   String
+  slug    String  @unique
+  excerpt String?
+  content String
+
+  coverMediaId String?
+  coverMedia   Media?  @relation("PostCoverMedia", fields: [coverMediaId], references: [id], onDelete: SetNull)
+
+  ogMediaId String?
+  ogMedia   Media?  @relation("PostOgMedia", fields: [ogMediaId], references: [id], onDelete: SetNull)
+
+  isFeatured  Boolean   @default(false)
+  isPinned    Boolean   @default(false)
+  publishedAt DateTime?
+
+  translationGroupId String?
+  metaTitle          String?
+  metaDescription    String?
+
+  createdById String?
+  createdBy   User?   @relation("PostCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  updatedById String?
+  updatedBy   User?   @relation("PostUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  attachments  PostAttachment[]
+  pageTemplate PageTemplate?    @default(STANDARD)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type, status, publishedAt])
+  @@index([lang, status])
+  @@index([translationGroupId])
+}
+
+model PostAttachment {
+  postId  String
+  mediaId String
+
+  post  Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([postId, mediaId])
+}
+
+//
+// EVENTS
+//
+model EventCategory {
+  id       String @id @default(uuid())
+  name     String
+  slug     String @unique
+  parentId String?
+  parent   EventCategory? @relation("EventCategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children EventCategory[] @relation("EventCategoryTree")
+
+  events   Event[]
+
+  order    Int @default(0)
+  isActive Boolean @default(true)
+
+  @@index([parentId, order])
+}
+
+
+
+model Event {
+  id     String      @id @default(uuid())
+  status EventStatus @default(DRAFT)
+  lang   Language
+
+  title   String
+  slug    String  @unique
+  excerpt String?
+  content String
+
+  startDateTime DateTime
+  endDateTime   DateTime?
+  timezone      String?
+
+  locationName    String?
+  locationAddress String?
+  isOnline        Boolean @default(false)
+  onlineLink      String?
+  registrationUrl String?
+
+  isFeatured  Boolean   @default(false)
+  publishedAt DateTime?
+
+  coverMediaId String?
+  coverMedia   Media?  @relation("EventCoverMedia", fields: [coverMediaId], references: [id], onDelete: SetNull)
+
+  translationGroupId String?
+
+  createdById String?
+  createdBy   User?   @relation("EventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  updatedById String?
+  updatedBy   User?   @relation("EventUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  categoryId String?
+  category   EventCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  attachments EventAttachment[]
+  albums      GalleryAlbum[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, startDateTime])
+  @@index([lang, status])
+  @@index([translationGroupId])
+}
+
+model EventAttachment {
+  eventId String
+  mediaId String
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, mediaId])
+}
+
+//
+// DOWNLOADS
+//
+
+model DownloadCategory {
+  id       String  @id @default(uuid())
+  name     String
+  slug     String  @unique
+  order    Int     @default(0)
+  isActive Boolean @default(true)
+
+  downloads Download[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Download {
+  id     String     @id @default(uuid())
+  status PostStatus @default(DRAFT)
+  lang   Language
+
+  title       String
+  slug        String  @unique
+  description String?
+
+  sourceType DownloadSourceType @default(UPLOAD)
+
+  mediaId String?
+  media   Media?  @relation("DownloadMedia", fields: [mediaId], references: [id], onDelete: SetNull)
+
+  externalUrl String?
+
+  categoryId String?
+  category   DownloadCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  isFeatured    Boolean   @default(false)
+  publishedAt   DateTime?
+  downloadCount Int       @default(0)
+
+  createdById String?
+  createdBy   User?   @relation("DownloadCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  updatedById String?
+  updatedBy   User?   @relation("DownloadUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  tags DownloadTag[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, publishedAt])
+  @@index([lang, status])
+  @@index([categoryId, status])
+}
+
+model Tag {
+  id   String @id @default(uuid())
+  name String
+  slug String @unique
+
+  downloads DownloadTag[]
+}
+
+model DownloadTag {
+  downloadId String
+  tagId      String
+
+  download Download @relation(fields: [downloadId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([downloadId, tagId])
+}
+
+//
+// GALLERY
+//
+
+model GalleryAlbum {
+  id     String     @id @default(uuid())
+  status PostStatus @default(DRAFT)
+  lang   Language?
+
+  title       String
+  slug        String  @unique
+  description String?
+
+  coverMediaId String?
+  coverMedia   Media?  @relation("AlbumCoverMedia", fields: [coverMediaId], references: [id], onDelete: SetNull)
+
+  eventId String?
+  event   Event?  @relation(fields: [eventId], references: [id], onDelete: SetNull)
+
+  photos GalleryPhoto[]
+
+  createdById String?
+  createdBy   User?   @relation("AlbumCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  updatedById String?
+  updatedBy   User?   @relation("AlbumUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model GalleryPhoto {
+  id      String       @id @default(uuid())
+  albumId String
+  album   GalleryAlbum @relation(fields: [albumId], references: [id], onDelete: Cascade)
+
+  mediaId String
+  media   Media  @relation("GalleryPhotoMedia", fields: [mediaId], references: [id], onDelete: Cascade)
+
+  caption String?
+  order   Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([albumId, createdAt])
+  @@index([albumId, order])
+}
+
+//
+// SITE SETTINGS
+//
+
+model SiteSetting {
+  id    String @id @default(uuid())
+  key   String @unique
+  value Json
+
+  updatedById String?
+  updatedBy   User?   @relation("SettingUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+//
+// AUDIT LOG
+//
+
+model AuditLog {
+  id     String  @id @default(uuid())
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  action     String
+  entityType String
+  entityId   String?
+  meta       Json?
+
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
