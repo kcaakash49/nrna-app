@@ -4,6 +4,7 @@ import { requireRoleApi } from "@/lib/auth-api";
 import { UserRole } from "@prisma/client";
 
 export async function GET(req: Request) {
+  console.log("fetching..................")
   const auth = await requireRoleApi([UserRole.SUPER_ADMIN, UserRole.EDITOR, UserRole.VIEWER]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 

@@ -12,7 +12,7 @@ export default async function AdminLayout({ children } : {children: React.ReactN
         <main className="flex-1 overflow-auto pt-16 md:pt-0">
           {children}
         </main>
-        <footer className="flex-shrink-0 text-center border-t p-2">
+        <footer className="shrink-0 text-center border-t p-2">
           {/* <Footer /> */}
           <br></br>
           <span>&copy; 2026 StackHook Pvt. Ltd.</span>

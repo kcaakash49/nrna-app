@@ -1,20 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import {  useMemo, useRef, useState } from "react";
 import { Language, PageTemplate, PostStatus, PostType } from "@prisma/client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Media, MediaResponse } from "@/types/mediaTypes";
+import { toast } from "sonner";
+import { createPostAction } from "@/actions/posts";
 
-type Media = {
-  id: string;
-  url: string;
-  mimeType: string;
-  originalName: string;
-  createdAt: string;
-};
+
 
 export default function PostForm() {
-  const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-
+  const queryClient = useQueryClient();
+  const fileRef = useRef<HTMLInputElement | null>(null);
   // post fields
   const [type, setType] = useState<PostType>(PostType.NEWS);
   const [status, setStatus] = useState<PostStatus>(PostStatus.DRAFT);
@@ -26,6 +23,7 @@ export default function PostForm() {
   const [pageTemplate, setPageTemplate] = useState<PageTemplate>(PageTemplate.STANDARD);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+  const [page, setPage] = useState(1);
 
   // selected media
   const [cover, setCover] = useState<Media | null>(null);
@@ -34,38 +32,77 @@ export default function PostForm() {
 
   // media picker state
   const [pickerOpen, setPickerOpen] = useState<null | "cover" | "og" | "attachments">(null);
-  const [mediaItems, setMediaItems] = useState<Media[]>([]);
   const [q, setQ] = useState("");
+  const [qInput, setQInput] = useState("");
+  const pageSize = 24;
 
-  async function loadMedia() {
-    const res = await fetch(`/api/admin/media?q=${encodeURIComponent(q)}&page=1&pageSize=24`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    setMediaItems(data.items || []);
-  }
+  const { data, isLoading, isFetching, error } = useQuery({
+    queryKey: ["media", { page, q, pageSize }],
+    queryFn: async (): Promise<MediaResponse> => {
+      const res = await fetch(
+        `/api/admin/media?q=${encodeURIComponent(q)}&page=${page}&pageSize=${pageSize}`,
+        { cache: "no-store" }
+      );
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "Failed to load media");
+      return json;
+    },
+    staleTime: 1 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    if (pickerOpen) loadMedia();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pickerOpen]);
+  const uploadMutation = useMutation({
+    mutationFn: async (files: File[]) => {
+      const fd = new FormData();
+      files.forEach((f) => fd.append("files", f));
 
-  async function uploadFiles(files: FileList | null) {
-    if (!files || !files.length) return;
+      const res = await fetch("/api/admin/media/upload", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json?.error || "Upload failed");
+      return json;
+    },
+    onSuccess: () => {
+      
+      queryClient.invalidateQueries({ queryKey: ["media"] });
+      setPage(1);
+    },
+  });
 
-    const fd = new FormData();
-    Array.from(files).forEach((f) => fd.append("files", f));
+  const createPostMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        type,
+        status,
+        lang,
+        title,
+        slug: slug || null,
+        excerpt: excerpt || null,
+        content,
+        isFeatured,
+        isPinned,
+        pageTemplate: type === PostType.PAGE ? pageTemplate : null,
+        coverMediaId: cover?.id ?? null,
+        ogMediaId: og?.id ?? null,
+        attachmentMediaIds: attachments.map((a) => a.id),
+      };
 
-    const res = await fetch("/api/admin/media/upload", { method: "POST", body: fd });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || "Upload failed");
+      if(!payload.coverMediaId){
+        throw new Error("CoverImage is required!!!")
+      }
+      if(!payload.ogMediaId){
+        throw new Error("OgImage is required, you can select same as coverimage!!!")
+      }
 
-    // refresh picker list
-    await loadMedia();
-
-    return data.items as Media[];
-  }
+      const res = await createPostAction(payload);
+      if (!res.success) throw new Error("Failed to create post");
+      return true;
+    },
+    onSuccess: () => {
+      toast.success("Post Created Successfully!!!")
+    },
+    onError: (error) => {
+      toast.error(error.message || "Operation Failed!!!")
+    }
+  })
 
   function selectMedia(item: Media) {
     if (pickerOpen === "cover") {
@@ -84,50 +121,23 @@ export default function PostForm() {
   }
 
   async function submit() {
-    setError(null);
-
-    startTransition(async () => {
-      try {
-        const payload = {
-          type,
-          status,
-          lang,
-          title,
-          slug: slug || null,
-          excerpt: excerpt || null,
-          content,
-          isFeatured,
-          isPinned,
-          pageTemplate: type === PostType.PAGE ? pageTemplate : null,
-          coverMediaId: cover?.id ?? null,
-          ogMediaId: og?.id ?? null,
-          attachmentMediaIds: attachments.map((a) => a.id),
-        };
-
-        const res = await fetch("/api/admin/posts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.error || "Failed to create post");
-
-        window.location.href = `/admin/posts/${data.post.id}/edit`;
-      } catch (e: any) {
-        setError(e?.message ?? "Something went wrong");
-      }
-    });
+    createPostMutation.mutate();
   }
 
   const canSubmit = useMemo(() => {
     return title.trim().length > 0 && content.trim().length > 0;
   }, [title, content]);
 
+  const mediaItems = data?.items ?? [];
+  const totalPages = data?.totalPages ?? 1;
+
+
   return (
     <div className="mt-6 space-y-6">
       {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {(error as Error).message}
+        </div>
       ) : null}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -241,11 +251,11 @@ export default function PostForm() {
 
       <button
         type="button"
-        disabled={!canSubmit || isPending}
+        disabled={!canSubmit || createPostMutation.isPending}
         onClick={submit}
-        className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-60"
+        className="rounded-xl bg-black px-4 py-2 text-white disabled:opacity-60 cursor-pointer"
       >
-        {isPending ? "Creating..." : "Create Post"}
+        {createPostMutation.isPending ? "Creating..." : "Create Post"}
       </button>
 
       {/* Picker Modal */}
@@ -261,30 +271,71 @@ export default function PostForm() {
 
             <div className="mt-3 flex items-center gap-2">
               <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
+                value={qInput}
+                onChange={(e) => setQInput(e.target.value)}
                 className="flex-1 rounded-lg border p-2"
                 placeholder="Search media..."
               />
-              <button className="rounded-lg border px-3 py-2" onClick={loadMedia}>Search</button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPage(1);
+                  setQ(qInput.trim());
+                }}
+                className="rounded-xl border px-4 py-3"
+                disabled={isFetching}
+              >
+                {isFetching ? "Searching..." : "Search"}
+              </button>
 
-              <label className="rounded-lg border px-3 py-2 cursor-pointer">
-                Upload
-                <input
-                  type="file"
-                  className="hidden"
-                  multiple
-                  onChange={async (e) => {
-                    try {
-                      await uploadFiles(e.target.files);
-                      e.target.value = "";
-                    } catch (err: any) {
-                      setError(err?.message ?? "Upload failed");
-                    }
-                  }}
-                />
-              </label>
+              <button
+                type="button"
+                className="rounded-xl bg-black text-white px-4 py-3"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploadMutation.isPending}
+              >
+                {uploadMutation.isPending ? "Uploading..." : "Upload"}
+              </button>
+
+              <input
+                ref={fileRef}
+                type="file"
+                multiple
+                className="sr-only"
+                onChange={(e) => {
+                  const list = e.currentTarget.files;
+                  if (list && list.length > 0) {
+                    uploadMutation.mutate(Array.from(list));
+                  }
+                  e.currentTarget.value = "";
+                }}
+              />
             </div>
+
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-600">
+                Page {page} of {totalPages} {data ? `• Total ${data.total}` : ""}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1 || isFetching}
+                >
+                  Prev
+                </button>
+                <button
+                  className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages || isFetching}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+
+             {isLoading ? <div className="text-sm text-gray-500">Loading media...</div> : null}
 
             <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
               {mediaItems.map((m) => (
@@ -297,7 +348,7 @@ export default function PostForm() {
                   <div className="text-xs text-gray-500 truncate">{m.mimeType}</div>
                   {m.mimeType.startsWith("image/") ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={m.url} alt={m.originalName} className="mt-2 h-28 w-full object-cover rounded-lg" />
+                    <img src={`${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`} alt={m.originalName} className="mt-2 h-28 w-full object-cover rounded-lg" />
                   ) : (
                     <div className="mt-2 h-28 w-full rounded-lg bg-gray-100 flex items-center justify-center text-xs text-gray-600">
                       FILE

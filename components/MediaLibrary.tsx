@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 
 type Media = {
   id: string;
@@ -11,74 +11,104 @@ type Media = {
   createdAt: string;
 };
 
+type MediaResponse = {
+  items: Media[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 export default function MediaLibrary() {
   const queryClient = useQueryClient();
-  const [q, setQ] = useState("");
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  const { data, isLoading, isFetching, error } = useQuery({
-    queryKey: ["media", q],
-    queryFn: async () => {
+  const [page, setPage] = useState(1);
+
+  // input vs applied search
+  const [qInput, setQInput] = useState("");
+  const [q, setQ] = useState(""); // applied query
+
+  const pageSize = 24;
+
+  const mediaQuery = useQuery({
+    queryKey: ["media", { page, q, pageSize }],
+    queryFn: async (): Promise<MediaResponse> => {
       const res = await fetch(
-        `/api/admin/media?q=${encodeURIComponent(q)}&page=1&pageSize=36`,
+        `/api/admin/media?q=${encodeURIComponent(q)}&page=${page}&pageSize=${pageSize}`,
         { cache: "no-store" }
       );
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "Failed to load media");
-      return json.items as Media[];
+      return json;
     },
+    staleTime: 1 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 
   const uploadMutation = useMutation({
     mutationFn: async (files: File[]) => {
-      // ✅ now you WILL see this log
-      console.log("Uploading files:", files.length);
-
       const fd = new FormData();
-      Array.from(files).forEach((f) => fd.append("files", f));
+      files.forEach((f) => fd.append("files", f));
 
-      const res = await fetch("/api/admin/media/upload", {
-        method: "POST",
-        body: fd,
-      });
-
+      const res = await fetch("/api/admin/media/upload", { method: "POST", body: fd });
       const json = await res.json();
       if (!res.ok) throw new Error(json?.error || "Upload failed");
       return json;
     },
     onSuccess: () => {
+      // invalidate ALL pages & searches
       queryClient.invalidateQueries({ queryKey: ["media"] });
+
+      // optional UX: jump back to page 1 to see latest uploads
+      setPage(1);
     },
   });
 
-  const items = data ?? [];
+  function applySearch() {
+    setPage(1);
+    setQ(qInput.trim());
+  }
+
+  const data = mediaQuery.data;
+  const items = data?.items ?? [];
+
+  const totalPages = data?.totalPages ?? 1;
 
   return (
     <div className="mt-6 space-y-4">
-      {error ? (
+      {mediaQuery.error ? (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {(error as Error).message}
+          {(mediaQuery.error as Error).message}
         </div>
       ) : null}
 
       <div className="flex flex-col md:flex-row gap-2 md:items-center">
         <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
+          value={qInput}
+          onChange={(e) => setQInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();    
+              applySearch();          
+            }
+          }}
           placeholder="Search by name or mime type…"
           className="flex-1 rounded-xl border px-4 py-3"
         />
 
         <button
           type="button"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ["media", q] })}
+          onClick={() => {
+            setPage(1);
+            setQ(qInput.trim()); // ✅ triggers fetch only when you click Search
+          }}
           className="rounded-xl border px-4 py-3"
-          disabled={isFetching}
+          disabled={mediaQuery.isFetching}
         >
-          {isFetching ? "Searching..." : "Search"}
+          {mediaQuery.isFetching ? "Searching..." : "Search"}
         </button>
 
-        {/* ✅ Reliable uploader */}
         <button
           type="button"
           className="rounded-xl bg-black text-white px-4 py-3"
@@ -94,32 +124,58 @@ export default function MediaLibrary() {
           multiple
           className="sr-only"
           onChange={(e) => {
-            const fileList = e.currentTarget.files;
-            if (fileList && fileList.length > 0) {
-              const files = Array.from(fileList);
-              uploadMutation.mutate(files);
+            const list = e.currentTarget.files;
+            if (list && list.length > 0) {
+              uploadMutation.mutate(Array.from(list));
             }
             e.currentTarget.value = "";
           }}
         />
       </div>
 
-      {isLoading ? <div className="text-sm text-gray-500">Loading media...</div> : null}
+      {/* Pagination controls */}
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-gray-600">
+          Page {page} of {totalPages} {data ? `• Total ${data.total}` : ""}
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1 || mediaQuery.isFetching}
+          >
+            Prev
+          </button>
+          <button
+            className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page >= totalPages || mediaQuery.isFetching}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+      {mediaQuery.isLoading ? <div className="text-sm text-gray-500">Loading media...</div> : null}
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {items.map((m) => (
           <div key={m.id} className="rounded-2xl border p-2">
             {m.mimeType.startsWith("image/") ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={`${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`} alt={m.originalName} className="h-28 w-full object-cover rounded-xl" />
+              <img
+                src={`${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`}
+                alt={m.originalName}
+                className="h-28 w-full object-cover rounded-xl"
+              />
             ) : (
-              <div className="h-28 w-full rounded-xl border border-red-500 bg-gray-100 flex items-center justify-center text-xs text-gray-600">
+              <div className="h-28 w-full rounded-xl bg-gray-100 flex items-center justify-center text-xs text-gray-600">
                 {m.mimeType.includes("pdf") ? "PDF" : "FILE"}
               </div>
             )}
             <div className="mt-2 text-xs text-gray-500 truncate">{m.mimeType}</div>
             <div className="text-sm font-medium line-clamp-2">{m.originalName}</div>
-            <div className="mt-1 text-[11px] text-gray-500 font-mono truncate">{m.id}</div>
           </div>
         ))}
       </div>

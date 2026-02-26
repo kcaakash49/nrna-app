@@ -17,9 +17,13 @@ const navSections = [
         path:"/admin/events"
     },
     {
+        name: "Events-category",
+        path: "/admin/event-category"
+    },
+    {
         name: "Media",
         path:"/admin/media"
-    }
+    },
 ];
 
 interface Props {
