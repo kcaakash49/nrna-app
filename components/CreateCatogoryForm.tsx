@@ -1,6 +1,6 @@
 "use client";
 
-import { createEventCategory } from "@/actions/event-category";
+import { createEventCategory } from "@/actions/events/event-category";
 import { toast } from "sonner";
 
 

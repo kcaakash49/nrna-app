@@ -4,7 +4,7 @@ import { useMemo, useRef, useState, useTransition } from "react";
 import { EventStatus, Language } from "@prisma/client";
 
 import { useFetchParentCategories } from "@/hooks/useFetchParentCategories"; // adjust path
-import { createEvent } from "@/actions/events";
+import { createEvent } from "@/actions/events/create-events";
 import { useFetchMediaQueries } from "@/hooks/useFetchMediaQueries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";

@@ -1,4 +1,4 @@
-import { fetchParentCategories } from "@/actions/event-category";
+import { fetchParentCategories } from "@/actions/events/event-category";
 import { useQuery } from "@tanstack/react-query";
 
 export const useFetchParentCategories = () => {

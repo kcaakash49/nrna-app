@@ -14,18 +14,6 @@ function slugify(input: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-async function ensureUniqueSlug(base: string) {
-  let slug = base;
-  let i = 2;
-  while (true) {
-    const exists = await prisma.post.findFirst({
-      where: { slug },
-      select: { id: true },
-    });
-    if (!exists) return slug;
-    slug = `${base}-${i++}`;
-  }
-}
 
 export async function fetchParentCategories() {
   try {

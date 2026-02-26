@@ -1,4 +1,4 @@
-import { fetchParentCategories } from "@/actions/event-category";
+import { fetchParentCategories } from "@/actions/events/event-category";
 import CategoryCreateForm from "@/components/CreateCatogoryForm";
 import Link from "next/link";
 
