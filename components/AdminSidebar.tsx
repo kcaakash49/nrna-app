@@ -18,7 +18,7 @@ const navSections = [
     },
     {
         name: "Events-category",
-        path: "/admin/event-category"
+        path: "/admin/events/create-category"
     },
     {
         name: "Media",

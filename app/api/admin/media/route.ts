@@ -4,7 +4,6 @@ import { requireRoleApi } from "@/lib/auth-api";
 import { UserRole } from "@prisma/client";
 
 export async function GET(req: Request) {
-  console.log("fetching..................")
   const auth = await requireRoleApi([UserRole.SUPER_ADMIN, UserRole.EDITOR, UserRole.VIEWER]);
   if (!auth.ok) return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
 
@@ -26,6 +25,13 @@ export async function GET(req: Request) {
   const [items, total] = await Promise.all([
     prisma.media.findMany({
       where,
+      select: {
+        id:true,
+        originalName:true,
+        url: true,
+        mimeType: true,
+        createdAt: true
+      },
       orderBy: { createdAt: "desc" },
       skip,
       take: pageSize,

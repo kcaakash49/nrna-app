@@ -76,9 +76,6 @@ export async function createEvent(input: CreateEventInput) {
     end = e;
   }
 
-  // If end not provided, keep it null (schema supports it).
-  // UI can prefill +24h; server doesn't need to enforce.
-
   const baseSlug = slugify(input.slug?.trim() || title);
   const slug = await ensureUniqueEventSlug(baseSlug);
 
