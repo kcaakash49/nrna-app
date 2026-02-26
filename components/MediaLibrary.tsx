@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 type Media = {
   id: string;
@@ -63,6 +64,9 @@ export default function MediaLibrary() {
       // optional UX: jump back to page 1 to see latest uploads
       setPage(1);
     },
+    onError: () => {
+      toast.error("Couldn't upload file!!!")
+    }
   });
 
   function applySearch() {
