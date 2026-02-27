@@ -5,12 +5,22 @@ import { UserRole, PostStatus, PostType, Language, PageTemplate} from "@prisma/c
 import { CreatePostType } from "@/types/postType";
 
 function slugify(input: string) {
-  return input
-    .toLowerCase()
+  const s = input
+    .normalize("NFKD")
     .trim()
+    .toLowerCase()
+    // remove quotes
     .replace(/['"]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
+    // turn spaces/underscores into hyphen
+    .replace(/[\s_]+/g, "-")
+    // remove anything that's NOT letter/number/hyphen (unicode-safe)
+    .replace(/[^\p{Letter}\p{Number}-]+/gu, "")
+    // collapse multiple hyphens
+    .replace(/-+/g, "-")
+    // trim hyphens
     .replace(/^-+|-+$/g, "");
+
+  return s;
 }
 
 async function ensureUniqueSlug(base: string) {

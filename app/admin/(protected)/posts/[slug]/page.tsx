@@ -21,8 +21,9 @@ function isPdf(mimeType?: string | null, url?: string | null) {
 
 export default async function PostRenderPage({ params }: { params: { slug: string } }) {
   const param = await params;
+  const slug = decodeURIComponent(param.slug);
   const p = await prisma.post.findUnique({
-    where: { slug: param.slug },
+    where: { slug:slug },
     include: {
       coverMedia: { select: { id: true, url: true, mimeType: true, originalName: true } },
       ogMedia: { select: { id: true, url: true, mimeType: true, originalName: true } },
@@ -33,6 +34,7 @@ export default async function PostRenderPage({ params }: { params: { slug: strin
       },
     },
   });
+  console.log(p);
 
   if (!p) return notFound();
 
