@@ -10,6 +10,7 @@ import {
     adminUpdatePostStatus,
 } from "@/actions/posts/posts"; // <- adjust path to your actions
 import { toast } from "sonner";
+import Link from "next/link";
 
 type PostStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED";
 type PostType = "NEWS" | "NOTICE" | "PRESS_RELEASE" | "ACTIVITY" | "PUBLICATION" | "PAGE";
@@ -346,7 +347,7 @@ export default function PostsListClient() {
                                         <tr key={p.id} className="border-b last:border-b-0">
                                             <td className="p-3">
                                                 <div className="font-medium text-gray-900 flex items-center gap-2">
-                                                    <span className="truncate max-w-[420px]">{p.title}</span>
+                                                    <Link href={`/admin/posts/${p.slug}`} className="truncate max-w-[420px]">{p.title}</Link>
                                                     {p.isFeatured ? (
                                                         <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
                                                             Featured
@@ -392,7 +393,7 @@ export default function PostsListClient() {
                                             <td className="p-3">
                                                 <div className="flex items-center justify-end gap-2">
                                                     <a
-                                                        href={`/admin/posts/edit/${p.id}`}
+                                                        href={`/admin/posts/edit/${p.slug}`}
                                                         className="px-3 py-1.5 rounded-lg border hover:bg-gray-50"
                                                     >
                                                         Edit
