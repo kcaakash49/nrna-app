@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { toast } from "sonner";
+import Link from "next/link";
+import Image from "next/image";
 
 type Media = {
   id: string;
@@ -167,16 +169,18 @@ export default function MediaLibrary() {
         {items.map((m) => (
           <div key={m.id} className="rounded-2xl border p-2">
             {m.mimeType.startsWith("image/") ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={`${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`}
                 alt={m.originalName}
                 className="h-28 w-full object-cover rounded-xl"
+                unoptimized = {process.env.NODE_ENV !== "production"}
+                height={28}
+                width={28}    
               />
             ) : (
-              <div className="h-28 w-full rounded-xl bg-gray-100 flex items-center justify-center text-xs text-gray-600">
+              <Link href={`${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`} target="blank" className="h-28 w-full rounded-xl bg-gray-100 flex items-center justify-center text-xs text-gray-600">
                 {m.mimeType.includes("pdf") ? "PDF" : "FILE"}
-              </div>
+              </Link>
             )}
             <div className="mt-2 text-xs text-gray-500 truncate">{m.mimeType}</div>
             <div className="text-sm font-medium line-clamp-2">{m.originalName}</div>

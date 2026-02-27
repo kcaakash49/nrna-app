@@ -87,3 +87,4 @@ export async function createPostAction(payload: CreatePostType) {
     success: true, post
   };
 }
+
