@@ -146,10 +146,6 @@ export default async function EventRenderPage({ params }: { params: { slug: stri
 
             {/* Content */}
             <section className="prose max-w-none">
-                {/* If content is HTML, you can dangerouslySetInnerHTML.
-            If it's plain text, keep <pre> or render as paragraphs.
-            Your schema says `content String` - you decide format.
-        */}
                 <div className="whitespace-pre-wrap">{ev.content}</div>
             </section>
 

@@ -175,7 +175,8 @@ export default function MediaLibrary() {
                 className="h-28 w-full object-cover rounded-xl"
                 unoptimized = {process.env.NODE_ENV !== "production"}
                 height={28}
-                width={28}    
+                width={28}  
+                quality={100}  
               />
             ) : (
               <Link href={`${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`} target="blank" className="h-28 w-full rounded-xl bg-gray-100 flex items-center justify-center text-xs text-gray-600">
