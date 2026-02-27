@@ -5,8 +5,9 @@ import { notFound } from "next/navigation";
 
 export default async function EditPostPage({ params }: { params: { slug: string } }) {
   const param = await params;
+  const slug = decodeURIComponent(param.slug);
   const post = await prisma.post.findUnique({
-    where: { slug: param.slug },
+    where: { slug: slug },
     include: {
       coverMedia: { select: { id: true, url: true, mimeType: true, originalName: true, createdAt: true } },
       ogMedia: { select: { id: true, url: true, mimeType: true, originalName: true, createdAt: true } },
