@@ -95,8 +95,8 @@ export default function MediaLibrary() {
           onChange={(e) => setQInput(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-              e.preventDefault();    
-              applySearch();          
+              e.preventDefault();
+              applySearch();
             }
           }}
           placeholder="Search by name or mime type…"
@@ -128,12 +128,27 @@ export default function MediaLibrary() {
           ref={fileRef}
           type="file"
           multiple
+          accept="image/*,application/pdf"
           className="sr-only"
           onChange={(e) => {
             const list = e.currentTarget.files;
-            if (list && list.length > 0) {
-              uploadMutation.mutate(Array.from(list));
+            if (!list) return;
+
+            const validFiles = Array.from(list).filter((file) => {
+              return (
+                file.type.startsWith("image/") ||
+                file.type === "application/pdf"
+              );
+            });
+
+            if (validFiles.length !== list.length) {
+              alert("Only images and PDFs are allowed.");
             }
+
+            if (validFiles.length > 0) {
+              uploadMutation.mutate(validFiles);
+            }
+
             e.currentTarget.value = "";
           }}
         />
@@ -173,10 +188,10 @@ export default function MediaLibrary() {
                 src={`${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`}
                 alt={m.originalName}
                 className="h-28 w-full object-cover rounded-xl"
-                unoptimized = {process.env.NODE_ENV !== "production"}
+                unoptimized={process.env.NODE_ENV !== "production"}
                 height={28}
-                width={28}  
-                quality={100}  
+                width={28}
+                quality={100}
               />
             ) : (
               <Link href={`${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`} target="blank" className="h-28 w-full rounded-xl bg-gray-100 flex items-center justify-center text-xs text-gray-600">

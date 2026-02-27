@@ -1,3 +1,4 @@
+import PdfSwitcher from "@/components/PdfSwitcher";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
@@ -49,7 +50,10 @@ export default async function EventRenderPage({ params }: { params: { slug: stri
         .filter(Boolean);
 
     const pdfs = attachmentMedias.filter((m) => isPdf(m.mimeType, m.url));
-    const others = attachmentMedias.filter((m) => !isPdf(m.mimeType, m.url));
+    // const others = attachmentMedias.filter((m) => !isPdf(m.mimeType, m.url));
+    const images = attachmentMedias.filter(
+        (m) => m.mimeType?.startsWith("image/")
+    );
 
     return (
         <div className="p-6 space-y-6">
@@ -155,60 +159,37 @@ export default async function EventRenderPage({ params }: { params: { slug: stri
                     <h2 className="text-xl font-semibold">Attachments</h2>
 
                     {/* Non-PDF list */}
-                    {others.length ? (
-                        <div className="rounded-2xl border p-4">
-                            <div className="font-medium mb-2">Files</div>
-                            <ul className="space-y-2 text-sm">
-                                {others.map((m) => (
-                                    <li key={m.id} className="flex items-center justify-between gap-3">
-                                        <div className="min-w-0">
-                                            <div className="font-medium truncate">{m.originalName}</div>
-                                            <div className="text-gray-500 truncate">{m.mimeType}</div>
-                                        </div>
-                                        <a
-                                            className="rounded-lg border px-3 py-2 hover:bg-gray-50"
-                                            href={`${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
-                                            Open
-                                        </a>
-                                    </li>
+                    {images.length > 0 && (
+                        <section className="space-y-4">
+                            <h2 className="text-xl font-semibold">Images</h2>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {images.map((m) => (
+                                    <img
+                                        key={m.id}
+                                        src={`${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`}
+                                        alt={m.originalName}
+                                        className="rounded-xl border object-cover w-full"
+                                    />
                                 ))}
-                            </ul>
-                        </div>
-                    ) : null}
+                            </div>
+                        </section>
+                    )}
 
                     {/* PDF inline viewer */}
-                    {pdfs.length ? (
-                        <div className="space-y-4">
-                            {pdfs.map((m) => {
-                                const pdfUrl = `${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`;
-                                return (
-                                    <div key={m.id} className="rounded-2xl border overflow-hidden">
-                                        <div className="flex items-center justify-between gap-3 p-3 border-b bg-gray-50">
-                                            <div className="min-w-0">
-                                                <div className="font-medium truncate">{m.originalName}</div>
-                                                <div className="text-xs text-gray-500 truncate">{m.mimeType}</div>
-                                            </div>
-                                            <a
-                                                className="rounded-lg border px-3 py-2 text-sm hover:bg-white"
-                                                href={pdfUrl}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                            >
-                                                Open in new tab
-                                            </a>
-                                        </div>
+                    {pdfs.length > 0 && (
+                        <section className="space-y-4">
+                            <h2 className="text-xl font-semibold">Documents</h2>
 
-                                        <div className="h-[80vh] w-full">
-                                            <iframe title={m.originalName} src={pdfUrl} className="h-full w-full" />
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : null}
+                            <PdfSwitcher
+                                pdfs={pdfs.map((m) => ({
+                                    id: m.id,
+                                    originalName: m.originalName,
+                                    url: `${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`,
+                                }))}
+                            />
+                        </section>
+                    )}
                 </section>
             ) : null}
         </div>
