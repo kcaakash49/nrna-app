@@ -20,7 +20,7 @@ export const useFetchMediaQueries = ({page,q="",pageSize, enabled=true}:QueryTyp
       if (!res.ok) throw new Error(json?.error || "Failed to load media");
       return json;
     },
-    staleTime: 1 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
     enabled,
     placeholderData:keepPreviousData
 

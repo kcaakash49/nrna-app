@@ -45,7 +45,7 @@ export default function MediaLibrary() {
       if (!res.ok) throw new Error(json?.error || "Failed to load media");
       return json;
     },
-    staleTime: 1 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,
   });
 

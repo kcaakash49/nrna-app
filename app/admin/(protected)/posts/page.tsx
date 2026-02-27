@@ -1,11 +1,7 @@
-import PostForm from "@/components/Post-Form";
+import PostsListClient from "@/components/PostList";
 
-
-export default function NewPostPage() {
-  return (
-    <div className="p-6 max-w-5xl">
-      <h1 className="text-2xl font-semibold">Create Post</h1>
-      <PostForm />
-    </div>
-  );
+export default function PostListPage(){
+    return (
+        <PostsListClient/>
+    )
 }

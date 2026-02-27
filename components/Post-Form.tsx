@@ -5,7 +5,7 @@ import { Language, PageTemplate, PostStatus, PostType } from "@prisma/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Media, MediaResponse } from "@/types/mediaTypes";
 import { toast } from "sonner";
-import { createPostAction } from "@/actions/posts";
+import { createPostAction } from "@/actions/posts/create-post";
 
 
 
@@ -47,7 +47,7 @@ export default function PostForm() {
       if (!res.ok) throw new Error(json?.error || "Failed to load media");
       return json;
     },
-    staleTime: 1 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   const uploadMutation = useMutation({
@@ -97,6 +97,9 @@ export default function PostForm() {
       return true;
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["admin-posts"]
+      })
       toast.success("Post Created Successfully!!!")
     },
     onError: (error) => {
