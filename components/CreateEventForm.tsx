@@ -1,14 +1,15 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState } from "react";
 import { EventStatus, Language } from "@prisma/client";
 
-import { useFetchParentCategories } from "@/hooks/useFetchParentCategories"; // adjust path
+import { useFetchParentCategories } from "@/hooks/useFetchParentCategories";
 import { createEvent } from "@/actions/events/create-events";
 import { useFetchMediaQueries } from "@/hooks/useFetchMediaQueries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-// If your hook is elsewhere, update import.
+import Image from "next/image";
+
 
 type Media = {
   id: string;
@@ -58,7 +59,7 @@ export default function EventForm() {
   const isPickerOpen = !!pickerOpen;
 
 
-  const { data: medias, isLoading: mediaLoading, isFetching: mediaFetching } = useFetchMediaQueries({ page, q, pageSize,enabled:isPickerOpen });
+  const { data: medias, isLoading: mediaLoading, isFetching: mediaFetching } = useFetchMediaQueries({ page, q, pageSize, enabled: isPickerOpen });
   console.log(medias);
   const { data: parents = [], isLoading: catLoading } = useFetchParentCategories();
   const parentCategories = parents as unknown as EventCategory[];
@@ -154,7 +155,7 @@ export default function EventForm() {
     setEndDateTime(iso);
   }
 
-   async function submit() {
+  async function submit() {
     createEventMutation.mutate();
   }
 
@@ -163,7 +164,7 @@ export default function EventForm() {
     return title.trim().length > 0 && content.trim().length > 0 && startDateTime.trim().length > 0;
   }, [title, content, startDateTime]);
 
-  
+
   const mediaItems = medias?.items ?? [];
   const totalPages = medias?.totalPages ?? 1;
 
@@ -459,7 +460,7 @@ export default function EventForm() {
                   <div className="text-xs text-gray-500 truncate">{m.mimeType}</div>
                   {m.mimeType.startsWith("image/") ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={`${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`} alt={m.originalName} className="mt-2 h-28 w-full object-cover rounded-lg" />
+                    <Image src={`${process.env.NEXT_PUBLIC_BASE_URL}${m.url}`} alt={m.originalName} height={28} width={28} unoptimized ={process.env.NODE_ENV !== "production"} className="mt-2 h-28 w-full object-cover rounded-lg" />
                   ) : (
                     <div className="mt-2 h-28 w-full rounded-lg bg-gray-100 flex items-center justify-center text-xs text-gray-600">
                       FILE
