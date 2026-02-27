@@ -155,6 +155,7 @@ export default function EventsListClient() {
   const eventsQ = useQuery({
     queryKey: ["admin-events", filters],
     queryFn: () => adminListEvents(filters),
+    staleTime:2*60*1000,
   });
 
   const updateStatusM = useMutation({
@@ -342,7 +343,7 @@ export default function EventsListClient() {
       {/* Table */}
       <div className="rounded-xl border bg-white overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-[900px] w-full text-sm">
+          <table className="min-w-225 w-full text-sm">
             <thead className="bg-gray-50 border-b">
               <tr className="text-left">
                 <th className="p-3">Title</th>
@@ -422,7 +423,7 @@ export default function EventsListClient() {
                       <td className="p-3">
                         <div className="flex items-center justify-end gap-2">
                           <a
-                            href={`/admin/events/${ev.slug}`}
+                            href={`/admin/events/edit/${ev.slug}`}
                             className="px-3 py-1.5 rounded-lg border hover:bg-gray-50"
                           >
                             Edit

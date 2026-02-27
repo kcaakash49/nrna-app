@@ -6,7 +6,7 @@ export default function NewEventPage() {
     <div className="p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         <h1 className="text-2xl font-semibold">Create Event</h1>
-        <EventForm />
+        <EventForm mode="create" />
       </div>
     </div>
   );
