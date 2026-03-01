@@ -24,6 +24,10 @@ const navSections = [
         name: "Media",
         path:"/admin/media"
     },
+    {
+        name: "Gallery",
+        path: "/admin/gallery"
+    }
 ];
 
 interface Props {
