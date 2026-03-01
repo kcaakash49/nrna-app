@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState, useTransition } from "react";
 import MediaPickerModal from "./MediaPickerModal";
 import { addAlbumPhotos } from "@/actions/gallery/addAlbumPhotos";
-import { updateAlbumStatus } from "@/actions/gallery/galleryUpdateDelete";
+import { updateAlbumCover, updateAlbumStatus } from "@/actions/gallery/galleryUpdateDelete";
 import { bindAlbumEvent } from "@/actions/gallery/galleryUpdateDelete";
 import { deleteAlbum } from "@/actions/gallery/galleryUpdateDelete";
 import { toast } from "sonner";
@@ -16,6 +16,8 @@ export default function AlbumManageClient({ album }: { album: any }) {
 
   const [pickerOpen, setPickerOpen] = useState<"images" | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [coverPickerOpen, setCoverPickerOpen] = useState<"cover" | null>(null);
+
 
   const coverUrl = album.coverMedia?.url
     ? `${process.env.NEXT_PUBLIC_BASE_URL}${album.coverMedia.url}`
@@ -119,7 +121,7 @@ export default function AlbumManageClient({ album }: { album: any }) {
       {/* Cover + Status controls */}
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2 rounded-2xl border bg-white shadow-sm overflow-hidden">
-          <div className="relative aspect-[16/7] bg-muted">
+          <div className="relative aspect-[16/7] bg-muted group">
             {coverUrl ? (
               <Image
                 src={coverUrl}
@@ -133,7 +135,43 @@ export default function AlbumManageClient({ album }: { album: any }) {
                 No cover selected
               </div>
             )}
+
+            {/* Hover overlay actions */}
+            <div className="absolute inset-x-0 bottom-0 p-3 opacity-0 transition group-hover:opacity-100">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-xs text-white/90 drop-shadow">
+                  Cover image
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCoverPickerOpen("cover")}
+                    disabled={isPending}
+                    className="rounded-xl bg-white/95 px-3 py-1.5 text-xs font-medium shadow-sm hover:bg-white disabled:opacity-60"
+                  >
+                    Edit cover
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      startTransition(async () => {
+                        const res = await updateAlbumCover(album.id, null);
+                        if (!res.ok) toast.error(res.error || "Couldn't remove cover");
+                        else toast.success("Cover removed");
+                      });
+                    }}
+                    disabled={isPending || !album.coverMedia}
+                    className="rounded-xl bg-white/95 px-3 py-1.5 text-xs font-medium text-red-700 shadow-sm hover:bg-white disabled:opacity-60"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
+
           {album.description ? (
             <div className="p-4 text-sm text-muted-foreground">{album.description}</div>
           ) : (
@@ -225,6 +263,29 @@ export default function AlbumManageClient({ album }: { album: any }) {
           }
         }}
       />
+      {
+        coverPickerOpen === "cover" && (
+          <MediaPickerModal
+            open={coverPickerOpen}
+            onClose={() => setCoverPickerOpen(null)}
+            mode="single"
+            title="Select Cover Image"
+            onSelectOne={(m) => {
+              if (!m.mimeType.startsWith("image/")) {
+                toast.error("Cover must be an image.");
+                return;
+              }
+              startTransition(async () => {
+                const res = await updateAlbumCover(album.id, m.id);
+                if (!res.ok) toast.error(res.error || "Couldn't update cover");
+                else toast.success("Cover updated");
+              });
+            }}
+          />
+        )
+      }
+
     </div>
+
   );
 }
