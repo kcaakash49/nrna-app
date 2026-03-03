@@ -9,6 +9,7 @@ import {
   adminListEvents,
   adminUpdateEventStatus,
 } from "@/actions/events/events";
+import Link from "next/link";
 
 type Status = "DRAFT" | "PUBLISHED" | "CANCELLED" | "ARCHIVED";
 type Lang = "EN" | "NP";
@@ -191,12 +192,12 @@ export default function EventsListClient() {
           <p className="text-sm text-gray-500">Manage events with filters, pagination, and status updates.</p>
         </div>
 
-        <a
+        <Link
           href="/admin/events/create-event"
           className="inline-flex items-center rounded-lg bg-black text-white px-4 py-2 text-sm hover:opacity-90"
         >
           Create Event
-        </a>
+        </Link>
       </div>
 
       {/* Filters */}

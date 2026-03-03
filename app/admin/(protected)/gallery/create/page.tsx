@@ -1,4 +1,5 @@
-import GalleryAlbumCreateForm from "@/components/GalleryAlbumCreateForm";
+import GalleryAlbumForm from "@/components/GalleryAlbumCreateForm";
+
 
 
 export default function CreateGalleryAlbumPage() {
@@ -11,7 +12,7 @@ export default function CreateGalleryAlbumPage() {
         </p>
       </div>
 
-      <GalleryAlbumCreateForm />
+      <GalleryAlbumForm mode="create" />
     </div>
   );
 }

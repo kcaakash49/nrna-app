@@ -5,15 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { EventStatus, Language } from "@prisma/client";
+import { slugify } from "@/lib/lib";
 
-function slugify(input: string) {
-  return input
-    .toLowerCase()
-    .trim()
-    .replace(/['"]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)+/g, "");
-}
+
 
 async function ensureUniqueEventSlug(base: string) {
   let slug = base || "event";

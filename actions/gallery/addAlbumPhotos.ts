@@ -10,6 +10,19 @@ export async function addAlbumPhotos(albumId: string, mediaIds: string[]) {
 
   const ids = Array.from(new Set(mediaIds)).filter(Boolean);
   if (!ids.length) return { ok: false, error: "No media selected" };
+  const result = await prisma.galleryAlbum.findUnique({ where: { id: albumId } });
+  if(!result){
+    return {
+      ok:false,
+      error: "No such album exist!!!"
+    }
+  }
+  if (result.status === "ARCHIVED"){
+    return {
+      ok:false,
+      error: "Album already archived"
+    }
+  }
 
   // Avoid duplicates
   const existing = await prisma.galleryPhoto.findMany({

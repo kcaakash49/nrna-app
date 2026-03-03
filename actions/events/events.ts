@@ -4,6 +4,7 @@ import {prisma} from "@/lib/prisma";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
+import { Prisma } from "@prisma/client";
 
 // If you have auth/role guards, call them inside each action.
 // import { requireAdmin } from "@/lib/auth"; // example
@@ -153,7 +154,7 @@ const UpdateStatusSchema = z.object({
 });
 
 export async function adminUpdateEventStatus(input: z.input<typeof UpdateStatusSchema>) {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const { id, status } = UpdateStatusSchema.parse(input);
 
@@ -174,7 +175,7 @@ export async function adminUpdateEventStatus(input: z.input<typeof UpdateStatusS
     data: {
       status,
       publishedAt: status === "PUBLISHED" ? new Date() : undefined,
-      // updatedById: ... (if you track from session)
+      updatedById:admin.id
     },
   });
 
@@ -187,7 +188,7 @@ const DeleteSchema = z.object({
 });
 
 export async function adminDeleteEvent(input: z.input<typeof DeleteSchema>) {
-  // await requireAdmin();
+  await requireAdmin();
 
   const { id } = DeleteSchema.parse(input);
 
@@ -207,4 +208,32 @@ export async function adminDeleteEvent(input: z.input<typeof DeleteSchema>) {
 
   revalidatePath("/admin/events");
   return { ok: true };
+}
+
+//fetch events
+export async function fetchEvents({ page = 1, pageSize = 10, q = "" }) {
+  const where = q
+    ? { title: { contains: q, mode: Prisma.QueryMode.insensitive } }
+    : {};
+
+  const [items, total] = await prisma.$transaction([
+    prisma.event.findMany({
+      where,
+      take: pageSize,
+      skip: (page - 1) * pageSize,
+      orderBy: { createdAt: "desc" },
+      select: { id: true, title: true },
+    }),
+    prisma.event.count({ where }),
+  ]);
+
+  return {
+    items,
+    meta: {
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    },
+  };
 }

@@ -10,6 +10,7 @@ import { bindAlbumEvent } from "@/actions/gallery/galleryUpdateDelete";
 import { deleteAlbum } from "@/actions/gallery/galleryUpdateDelete";
 import { toast } from "sonner";
 import PhotoCard from "./PhotoCard";
+import EventAttachModal from "./EventModal";
 
 export default function AlbumManageClient({ album }: { album: any }) {
   const [isPending, startTransition] = useTransition();
@@ -17,6 +18,7 @@ export default function AlbumManageClient({ album }: { album: any }) {
   const [pickerOpen, setPickerOpen] = useState<"images" | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [coverPickerOpen, setCoverPickerOpen] = useState<"cover" | null>(null);
+  const [eventModal, setEventModal] = useState(false);
 
 
   const coverUrl = album.coverMedia?.url
@@ -38,7 +40,11 @@ export default function AlbumManageClient({ album }: { album: any }) {
 
   const setStatus = (status: "DRAFT" | "PUBLISHED" | "ARCHIVED") => {
     startTransition(async () => {
-      await updateAlbumStatus(album.id, status as any);
+      const res = await updateAlbumStatus(album.id, status as any);
+      console.log(res);
+      if (!res.ok) {
+        toast.error(res.error || "Couldn't update status");
+      }
     });
   };
 
@@ -55,7 +61,10 @@ export default function AlbumManageClient({ album }: { album: any }) {
     const ok = window.confirm("Delete this album? This will remove all photos in it.");
     if (!ok) return;
     startTransition(async () => {
-      await deleteAlbum(album.id);
+      const res = await deleteAlbum(album.id);
+      if (!res.ok) {
+        toast.error(res.error || "Couldn't delete album");
+      }
     });
   };
 
@@ -83,39 +92,44 @@ export default function AlbumManageClient({ album }: { album: any }) {
             <div className="mt-2 text-xs text-muted-foreground">Not bound to any event</div>
           )}
         </div>
+        {
+          album.status !== "ARCHIVED" && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={onAddPhotos}
+                className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
+                disabled={isPending}
+              >
+                + Add Photos
+              </button>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={onAddPhotos}
-            className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
-            disabled={isPending}
-          >
-            + Add Photos
-          </button>
+              <button
+                onClick={() => setEventModal(true)}
+                className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
+                disabled={isPending}
+              >
+                Bind Event
+              </button>
 
-          <button
-            onClick={bindEvent}
-            className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
-            disabled={isPending}
-          >
-            Bind Event
-          </button>
+              <Link
+                href={`/admin/gallery/edit/${album.id}`}
+                className="rounded-xl border px-4 py-2 text-sm hover:bg-muted"
+              >
+                Edit
+              </Link>
 
-          <Link
-            href={`/admin/gallery/${album.id}/edit`}
-            className="rounded-xl border px-4 py-2 text-sm hover:bg-muted"
-          >
-            Edit
-          </Link>
+              <button
+                onClick={onDelete}
+                className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 hover:bg-red-100 disabled:opacity-60"
+                disabled={isPending}
+              >
+                Delete
+              </button>
+            </div>
+          )
+        }
 
-          <button
-            onClick={onDelete}
-            className="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 hover:bg-red-100 disabled:opacity-60"
-            disabled={isPending}
-          >
-            Delete
-          </button>
-        </div>
+
       </div>
 
       {/* Cover + Status controls */}
@@ -181,32 +195,37 @@ export default function AlbumManageClient({ album }: { album: any }) {
 
         <div className="rounded-2xl border bg-white p-4 shadow-sm">
           <div className="text-sm font-semibold">Status</div>
-          <div className="mt-3 grid gap-2">
-            <button
-              onClick={() => setStatus("DRAFT")}
-              className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
-              disabled={isPending}
-            >
-              Set DRAFT
-            </button>
-            <button
-              onClick={() => setStatus("PUBLISHED")}
-              className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
-              disabled={isPending}
-            >
-              Set PUBLISHED
-            </button>
-            <button
-              onClick={() => setStatus("ARCHIVED")}
-              className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
-              disabled={isPending}
-            >
-              Set ARCHIVED
-            </button>
-          </div>
+          {
+            album.status !== "ARCHIVED" && (
+              <div className="mt-3 grid gap-2">
+                <button
+                  onClick={() => setStatus("DRAFT")}
+                  className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
+                  disabled={isPending}
+                >
+                  Set DRAFT
+                </button>
+                <button
+                  onClick={() => setStatus("PUBLISHED")}
+                  className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
+                  disabled={isPending}
+                >
+                  Set PUBLISHED
+                </button>
+                <button
+                  onClick={() => setStatus("ARCHIVED")}
+                  className="rounded-xl border px-4 py-2 text-sm hover:bg-muted disabled:opacity-60"
+                  disabled={isPending}
+                >
+                  Set ARCHIVED
+                </button>
+              </div>
+            )
+          }
+
 
           <div className="mt-4 text-xs text-muted-foreground">
-            Current: <span className="font-medium">{album.status}</span>
+            Current: <span className="font-medium bg-green-800 p-2 rounded-xl text-white">{album.status}</span>
           </div>
         </div>
       </div>
@@ -215,12 +234,17 @@ export default function AlbumManageClient({ album }: { album: any }) {
       <div className="mt-8">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Photos</h2>
-          <button
-            onClick={onAddPhotos}
-            className="rounded-xl border px-4 py-2 text-sm hover:bg-muted"
-          >
-            Add more
-          </button>
+          {
+            album.status !== "ARCHIVED" && (
+              <button
+                onClick={onAddPhotos}
+                className="rounded-xl border px-4 py-2 text-sm hover:bg-muted"
+              >
+                Add more
+              </button>
+
+            )
+          }
         </div>
 
         {album.photos.length === 0 ? (
@@ -258,8 +282,7 @@ export default function AlbumManageClient({ album }: { album: any }) {
         onConfirmMultiple={async (ids) => {
           const res = await addAlbumPhotos(album.id, ids);
           if (!res.ok) {
-            toast.error("Couldn't add photos!!!")
-            throw new Error("Add failed");
+            toast.error(res.error || "Couldn't add photos!!!")
           }
         }}
       />
@@ -284,7 +307,25 @@ export default function AlbumManageClient({ album }: { album: any }) {
           />
         )
       }
+      <EventAttachModal
+        open={eventModal}
+        onClose={() => setEventModal(false)}
+        onSelect={(ev: {
+          id:string,title:string
+        }| null) => {
+          startTransition(async () => {
+            const res = await bindAlbumEvent(album.id, ev ? ev.id : null);
 
+            if (!res.ok) {
+              toast.error(res.error || "Couldn't bind event");
+            } else {
+              toast.success(ev ? "Event linked" : "Event unlinked");
+            }
+
+            setEventModal(false);
+          });
+        }}
+      />
     </div>
 
   );
