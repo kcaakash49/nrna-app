@@ -41,7 +41,6 @@ export default function MenuItemCreateForm({
     events: Event[];
     eventCategories: EventCategory[];
 }) {
-    console.log(menuItems);
     const [pending, startTransition] = useTransition();
     const router = useRouter();
     const formRef = useRef<HTMLFormElement>(null);

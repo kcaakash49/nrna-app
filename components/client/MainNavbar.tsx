@@ -42,17 +42,35 @@ function SubMenuItemDesktop({ item }: { item: NavItem }) {
   const hasChildren = (item.children?.length ?? 0) > 0;
 
   return (
-    <div className="relative group/item">
+    <div className="relative">
+      {/* Make the row a peer */}
       <Link
         href={item.href || "#"}
-        className="flex items-center justify-between gap-6 px-4 py-2 text-[14px] font-medium text-white/95 hover:bg-white/10 whitespace-nowrap"
+        className="
+          peer
+          flex items-center justify-between gap-6
+          px-4 py-2
+          text-[14px] font-medium
+          text-white/95
+          hover:bg-white/10
+          whitespace-nowrap
+        "
       >
         <span>{item.label}</span>
         {hasChildren ? <ChevronRight /> : null}
       </Link>
 
+      {/* Flyout: opens ONLY when this row is hovered (peer) */}
       {hasChildren && (
-        <div className="absolute left-full top-0 hidden group-hover/item:block z-[9999]">
+        <div
+          className="
+            absolute left-full top-0
+            hidden
+            z-[9999]
+            peer-hover:block
+            hover:block
+          "
+        >
           <div className="-ml-px min-w-[260px] border border-white/10 bg-[#2b2a75] shadow-xl">
             {item.children!.map((child) => (
               <SubMenuItemDesktop key={child.id} item={child} />
