@@ -6,7 +6,7 @@ export const revalidate = 3600;
 
 export default async function ClientLayout({children} : {children: React.ReactNode}){
     const menu = await getNavbarMenu("MAIN_NAVBAR");
-
+    console.log(menu);
     return (
         
         <div>

@@ -28,6 +28,7 @@ export default async function NewMenuItemPage() {
   });
 
   const eventCategories = await prisma.eventCategory.findMany({
+    where: {parentId:null},
     orderBy: [{ parentId: "asc" }, { order: "asc" }],
     select: { id: true, name: true, slug: true, parentId: true },
   });
