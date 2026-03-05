@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
       {
         protocol:"https",
         hostname:"test.niceitsolution.com"
+      },
+      {
+        protocol:"https",
+        hostname:"nrna.niceitsolution.com"
       }
     ]
   }
