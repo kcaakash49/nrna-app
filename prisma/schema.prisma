@@ -44,12 +44,10 @@ enum PostType {
   PAGE
 }
 
-enum InternalRefType {
+enum MenuRefType {
   POST
-  CATEGORY
   EVENT
-  ALBUM
-  PAGE
+  EVENT_CATEGORY
 }
 
 enum Visibility {
@@ -68,6 +66,14 @@ enum PageTemplate {
   COMMITTEE_DIRECTORY
   DOWNLOADS_INDEX
   EVENTS_INDEX
+}
+
+enum MenuItemKind {
+  URL
+  POST_PAGE
+  EVENT
+  EVENT_CATEGORY
+  DROPDOWN
 }
 
 //
@@ -164,6 +170,7 @@ model Menu {
 
 model MenuItem {
   id     String @id @default(uuid())
+
   menuId String
   menu   Menu   @relation(fields: [menuId], references: [id], onDelete: Cascade)
 
@@ -171,28 +178,41 @@ model MenuItem {
   parent   MenuItem?  @relation("MenuItemChildren", fields: [parentId], references: [id], onDelete: Cascade)
   children MenuItem[] @relation("MenuItemChildren")
 
-  order Int
+  order Int @default(0)
 
-  label        String
-  url          String?
+  // What shows in UI
+  label String
+
+  // If present, this is the link (works for internal routes too: "/", "/gallery", "/news")
+  url String?
+
+  // Only matters when url is used (external = open with rel safety)
   linkType     LinkType @default(INTERNAL)
   openInNewTab Boolean  @default(false)
-  isActive     Boolean  @default(true)
 
-  description     String?
-  icon            String?
-  badgeText       String?
-  visibility      Visibility       @default(PUBLIC)
-  lang            Language?
-  internalRefType InternalRefType?
-  internalRefId   String?
+  // Optional UI metadata
+  description String?
+  icon        String?
+  badgeText   String?
+
+  // Publishing controls
+  isActive    Boolean    @default(true)
+  visibility  Visibility @default(PUBLIC)
+  lang        Language?
+  kind MenuItemKind @default(URL)
+
+  // Optional internal reference (for single content or category pages)
+  refType MenuRefType?
+  refId   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([menuId, parentId, order])
   @@index([menuId, isActive])
+  @@index([menuId, refType])
 }
+
 
 //
 // POSTS

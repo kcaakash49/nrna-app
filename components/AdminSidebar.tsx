@@ -28,6 +28,14 @@ const navSections = [
         name: "Gallery",
         path: "/admin/gallery"
     },
+    {
+        name: "Navbar Menu",
+        path: "/admin/menus"
+    },
+    {
+        name: "Menu Items",
+        path: "/admin/menu-items"
+    }
    
 ];
 
