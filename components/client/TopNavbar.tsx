@@ -79,7 +79,7 @@ export default function TopNavbar() {
             </div>
 
             {/* Nepal Flag */}
-            <div className="relative h-[44px] w-[34px] sm:h-[56px] sm:w-[44px] md:h-[70px] md:w-[54px] hidden md:self-auto">
+            <div className="relative h-[44px] w-[34px] sm:h-[56px] sm:w-[44px] md:h-[70px] md:w-[54px] hidden md:inline-block">
               <Image
                 src="/np_flag.gif"
                 alt="Nepal Flag"
