@@ -210,5 +210,5 @@ export const getNavbarMenu = (menuKey: string) =>
   unstable_cache(
     () => _getNavbarMenu(menuKey),
     ["navbar-menu", menuKey],
-    { revalidate: 3600 }
+    { revalidate: 3600, tags:["navbar-menu"] }
   )();

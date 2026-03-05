@@ -1,7 +1,7 @@
 "use server";
 
 import {prisma} from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import {
   LinkType,
   MenuItemKind,
@@ -102,7 +102,8 @@ export async function createMenuItem(formData: FormData) {
     });
 
     revalidatePath("/admin/menu-items");
-    revalidatePath("/admin/menus"); // in case you show items inside menus
+    revalidatePath("/admin/menus"); 
+    revalidateTag("navbar-menu", "max");
     return { ok: true };
   } catch (err) {
     console.error("createMenuItem error:", err);
