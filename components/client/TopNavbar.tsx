@@ -86,6 +86,7 @@ export default function TopNavbar() {
                 fill
                 className="object-contain"
                 priority
+                unoptimized
               />
             </div>
           </div>
