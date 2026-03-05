@@ -20,6 +20,7 @@ function isPdf(mimeType?: string | null, url?: string | null) {
 }
 
 export default async function EventRenderPage({ params }: { params: { slug: string } }) {
+    console.log("Events page");
     const param = await params;
     const ev = await prisma.event.findUnique({
         where: { slug: param.slug },
