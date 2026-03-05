@@ -4,6 +4,11 @@ import { notFound } from "next/navigation";
 
 export const revalidate = 3600;
 
+export async function generateStaticParams() {
+  const slugs = await prisma.event.findMany({ select: { slug: true } });
+  return slugs.map((e) => ({ slug: e.slug }));
+}
+
 function formatDT(d: Date | null | undefined) {
     if (!d) return "";
     return new Intl.DateTimeFormat("en-GB", {
