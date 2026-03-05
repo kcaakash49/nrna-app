@@ -2,6 +2,8 @@ import PdfSwitcher from "@/components/PdfSwitcher";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 
+export const revalidate = 3600;
+
 function formatDT(d: Date | null | undefined) {
     if (!d) return "";
     return new Intl.DateTimeFormat("en-GB", {
