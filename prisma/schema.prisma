@@ -44,6 +44,14 @@ enum PostType {
   PAGE
 }
 
+enum InternalRefType {
+  POST
+  CATEGORY
+  EVENT
+  ALBUM
+  PAGE
+}
+
 enum Visibility {
   PUBLIC
   ADMIN_ONLY
@@ -171,11 +179,13 @@ model MenuItem {
   openInNewTab Boolean  @default(false)
   isActive     Boolean  @default(true)
 
-  description String?
-  icon        String?
-  badgeText   String?
-  visibility  Visibility @default(PUBLIC)
-  lang        Language?
+  description     String?
+  icon            String?
+  badgeText       String?
+  visibility      Visibility       @default(PUBLIC)
+  lang            Language?
+  internalRefType InternalRefType?
+  internalRefId   String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -244,23 +254,21 @@ model PostAttachment {
 // EVENTS
 //
 model EventCategory {
-  id       String @id @default(uuid())
+  id       String          @id @default(uuid())
   name     String
-  slug     String 
+  slug     String
   parentId String?
-  parent   EventCategory? @relation("EventCategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  parent   EventCategory?  @relation("EventCategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
   children EventCategory[] @relation("EventCategoryTree")
 
-  events   Event[]
+  events Event[]
 
-  order    Int @default(0)
+  order    Int     @default(0)
   isActive Boolean @default(true)
 
+  @@unique([parentId, slug])
   @@index([parentId, order])
-  @@unique([parentId,slug])
 }
-
-
 
 model Event {
   id     String      @id @default(uuid())
@@ -294,9 +302,9 @@ model Event {
   createdBy   User?   @relation("EventCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
 
   updatedById String?
-  updatedBy   User?   @relation("EventUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
-  categoryId String?
-  category   EventCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  updatedBy   User?          @relation("EventUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  categoryId  String?
+  category    EventCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   attachments EventAttachment[]
   albums      GalleryAlbum[]
