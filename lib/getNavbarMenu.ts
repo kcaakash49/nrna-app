@@ -1,8 +1,9 @@
 import {prisma} from "@/lib/prisma";
+import { unstable_cache } from "next/cache";
 
 type MenuNode = any;
 
-export async function getNavbarMenu(menuKey: string) {
+async function _getNavbarMenu(menuKey: string) {
   console.log("Fetching Menu Items");
   const menu = await prisma.menu.findFirst({
     where: { key: menuKey, isActive: true },
@@ -204,3 +205,10 @@ export async function getNavbarMenu(menuKey: string) {
 
   return roots;
 }
+
+export const getNavbarMenu = (menuKey: string) =>
+  unstable_cache(
+    () => _getNavbarMenu(menuKey),
+    ["navbar-menu", menuKey],
+    { revalidate: 3600 }
+  )();
