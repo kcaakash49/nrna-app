@@ -3,6 +3,7 @@ import {prisma} from "@/lib/prisma";
 type MenuNode = any;
 
 export async function getNavbarMenu(menuKey: string) {
+  console.log("Fetching Menu Items");
   const menu = await prisma.menu.findFirst({
     where: { key: menuKey, isActive: true },
     include: {
