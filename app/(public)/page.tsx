@@ -1,6 +1,7 @@
 import HomepageMouSliderSection from "@/components/client/HomepageMouSliderSection";
 import InfoBanner from "@/components/client/InfoBanner";
 import PDFDisplaySection from "@/components/client/PdfDisplaySection";
+import WhoWeAreSection from "@/components/client/WhoWeAreSection";
 
 export default function Home() {
   console.log("I am rendering");
@@ -18,6 +19,7 @@ export default function Home() {
         </div>
       </section>
       <InfoBanner/>
+      <WhoWeAreSection/>
     </>
   );
 }
