@@ -276,7 +276,7 @@ model PostAttachment {
 model EventCategory {
   id       String          @id @default(uuid())
   name     String
-  slug     String
+  slug     String          @unique
   parentId String?
   parent   EventCategory?  @relation("EventCategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
   children EventCategory[] @relation("EventCategoryTree")

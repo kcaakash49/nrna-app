@@ -37,3 +37,35 @@ export async function getAlbumPhots(albumId: string) {
   if (!album) return null;
   return album;
 }
+
+export async function getPhotosByAlbumSlug(slug:string){
+  const album = await prisma.galleryAlbum.findUnique({
+    where: { slug:slug },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      description: true,
+      status: true,
+      lang: true,
+      eventId: true,
+      createdAt: true,
+      updatedAt: true,
+      coverMedia: { select: { id: true, url: true, mimeType: true, originalName: true } },
+      photos: {
+        orderBy: [{ order: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true,
+          caption: true,
+          order: true,
+          media: { select: { id: true, url: true, mimeType: true, originalName: true } },
+        },
+      },
+      _count: { select: { photos: true } },
+      event: { select: { id: true, title: true, slug: true } },
+    },
+  });
+
+  if (!album) return null;
+  return album;
+}

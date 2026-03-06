@@ -185,12 +185,12 @@ export default function PostsListClient() {
                     <p className="text-sm text-gray-500">Manage posts with filters, pagination, status updates, and delete.</p>
                 </div>
 
-                <a
+                <Link
                     href="/admin/posts/create-posts"
                     className="inline-flex items-center rounded-lg bg-black text-white px-4 py-2 text-sm hover:opacity-90"
                 >
                     Create Post
-                </a>
+                </Link>
             </div>
 
             {/* Filters */}

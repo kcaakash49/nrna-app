@@ -39,7 +39,7 @@ export default function AlbumSearchBar() {
   };
 
   return (
-    <div className="mt-6 flex flex-col gap-2 rounded-2xl bg-white p-4 shadow-sm sm:flex-row sm:items-center">
+    <div className="mt-6 flex flex-col gap-2 rounded-2xl bg-white shadow-sm sm:flex-row sm:items-center">
       <div className="flex-1">
         <div className="text-sm font-medium">Search albums</div>
         <div className="mt-2 flex gap-2">

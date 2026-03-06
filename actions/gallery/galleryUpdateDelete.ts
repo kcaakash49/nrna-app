@@ -32,6 +32,7 @@ export async function updateAlbumStatus(albumId: string, status: PostStatus) {
 
   revalidatePath(`/admin/gallery/${albumId}`);
   revalidatePath(`/admin/gallery`);
+  revalidatePath("/gallery");
   return { ok: true };
 }
 

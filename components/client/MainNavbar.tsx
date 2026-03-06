@@ -136,7 +136,7 @@ export default function MainNavbar({ menu }: { menu: NavItem[] }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="w-full bg-[#2b2a75] text-white">
+    <nav className="w-full bg-[#2b2a75] text-white sticky top-0 z-20">
       <div className="mx-auto max-w-[1600px] px-4">
         {/* Top row: hamburger on mobile + desktop menu */}
         <div className="flex items-center justify-between">

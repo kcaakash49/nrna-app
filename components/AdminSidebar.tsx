@@ -35,6 +35,10 @@ const navSections = [
     {
         name: "Menu Items",
         path: "/admin/menu-items"
+    },
+    {
+        name: "Site Settings",
+        path: "/admin/site-settings"
     }
    
 ];

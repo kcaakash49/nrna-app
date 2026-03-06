@@ -47,6 +47,7 @@ export async function createGalleryAlbum(input: CreateAlbumInput) {
     });
 
     revalidatePath("/admin/gallery");
+    revalidatePath("/gallery");
     return { ok: true, album };
   } catch (err: any) {
     if (err?.code === "P2002") {
