@@ -1,10 +1,12 @@
-import { getGalleryAlbums } from "@/actions/gallery/gallery";
+
 import AlbumSearchBar from "@/components/AlbumSearchBar";
 import GalleryAlbums from "@/components/client/GalleryAlbum";
-import GalleryAlbumsUI from "@/components/GalleryAlbumsUI";
+
+import { getGalleryAlbumsQuery } from "@/lib/albums";
 import { Language, PostStatus } from "@prisma/client";
 import Link from "next/link";
 
+export const revalidate = 3600;
 
 export default async function GalleryPage({
     searchParams,
@@ -18,7 +20,7 @@ export default async function GalleryPage({
     const status = typeof sp.status === "string" ? (sp.status as PostStatus) : undefined;
     const lang = typeof sp.lang === "string" ? (sp.lang as Language) : undefined;
 
-    const data = await getGalleryAlbums({ page, pageSize: 12, q, status: "PUBLISHED", lang });
+    const data = await getGalleryAlbumsQuery({ page, pageSize: 12, q, status: "PUBLISHED", lang });
 
     if (!data.items.length) {
         return (
