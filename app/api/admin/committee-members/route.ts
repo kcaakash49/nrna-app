@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
-    console.log("Fetching COmmmittee members");
+  console.log("Fetching COmmmittee members");
   try {
     await requireAdmin();
 
@@ -63,8 +63,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.committeeMember.count({ where }),
     ]);
-
-    return NextResponse.json({
+    const data = {
       ok: true,
       data: items,
       pagination: {
@@ -73,10 +72,9 @@ export async function GET(req: NextRequest) {
         total,
         totalPages: Math.ceil(total / pageSize),
       },
-      headers: {
-        "Cache-Control": "public, max-age=3600",
-      },
-    });
+    };
+
+    return NextResponse.json(data, { status: 200, headers: { "Cache-Control": "public, max-age=3600"} });
   } catch (error) {
     console.error("GET /api/admin/committee-members error:", error);
     return NextResponse.json(
