@@ -5,11 +5,31 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import CreateTenureModal from "./CreateTenureModal";
+import CreateCommitteeMetaModal from "./CreateCommitteeMetaModal";
+
 
 type AddMemberFormProps = {
-  initialTenures: { id: string; label: string }[];
-  initialTeamTypes: { id: string; name: string }[];
-  initialGroups: { id: string; name: string }[];
+  initialTenures: {
+    id: string;
+    label: string;
+    startYear?: number | null;
+    endYear?: number | null;
+    order?: number;
+    isActive?: boolean;
+  }[];
+  initialTeamTypes: {
+    id: string;
+    name: string;
+    order?: number;
+    isActive?: boolean;
+  }[];
+  initialGroups: {
+    id: string;
+    name: string;
+    order?: number;
+    isActive?: boolean;
+  }[];
 };
 
 export default function AddMemberForm({
@@ -20,9 +40,9 @@ export default function AddMemberForm({
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const [tenures] = useState(initialTenures);
-  const [teamTypes] = useState(initialTeamTypes);
-  const [groups] = useState(initialGroups);
+  const [tenures, setTenures] = useState(initialTenures);
+  const [teamTypes, setTeamTypes] = useState(initialTeamTypes);
+  const [groups, setGroups] = useState(initialGroups);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [name, setName] = useState("");
@@ -31,26 +51,26 @@ export default function AddMemberForm({
   const [tenureId, setTenureId] = useState("");
   const [teamTypeId, setTeamTypeId] = useState("");
   const [groupId, setGroupId] = useState("");
-  const [order, setOrder] = useState("100");
+  const [order, setOrder] = useState("0");
   const [isActive, setIsActive] = useState(true);
 
   const canSubmit = useMemo(() => {
-    return (
+    return !!(
       name.trim() &&
       designation.trim() &&
+      imageFile &&
       tenureId &&
       teamTypeId &&
       groupId
     );
-  }, [name, designation, tenureId, teamTypeId, groupId]);
+  }, [name, designation, imageFile, tenureId, teamTypeId, groupId]);
 
   const mutation = useMutation({
     mutationFn: async () => {
       const formData = new FormData();
-
-      formData.append("name", name);
-      formData.append("designation", designation);
-      formData.append("country", country);
+      formData.append("name", name.trim());
+      formData.append("designation", designation.trim());
+      formData.append("country", country.trim());
       formData.append("tenureId", tenureId);
       formData.append("teamTypeId", teamTypeId);
       formData.append("groupId", groupId);
@@ -74,19 +94,15 @@ export default function AddMemberForm({
 
       return json;
     },
-
     onSuccess: () => {
       toast.success("Committee member created successfully");
-
       queryClient.invalidateQueries({
         queryKey: ["committee-members"],
       });
-
       router.push("/admin/committee-members");
       router.refresh();
     },
-
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast.error(error.message || "Something went wrong");
     },
   });
@@ -127,130 +143,190 @@ export default function AddMemberForm({
         className="space-y-6 rounded-2xl border bg-white p-5 shadow-sm"
       >
         <div className="grid gap-5 md:grid-cols-2">
-          
-          {/* NAME */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Name *</label>
             <input
+              type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border px-3 py-2"
+              className="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-black/10"
+              placeholder="Enter member name"
             />
           </div>
 
-          {/* DESIGNATION */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Designation *</label>
             <input
+              type="text"
               value={designation}
               onChange={(e) => setDesignation(e.target.value)}
-              className="w-full rounded-xl border px-3 py-2"
+              className="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-black/10"
+              placeholder="Enter designation"
             />
           </div>
 
-          {/* COUNTRY */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Country</label>
             <input
+              type="text"
               value={country}
               onChange={(e) => setCountry(e.target.value)}
-              className="w-full rounded-xl border px-3 py-2"
+              className="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-black/10"
+              placeholder="Enter country"
             />
           </div>
 
-          {/* IMAGE */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Member Photo</label>
+            <label className="text-sm font-medium">Member Photo *</label>
             <input
               type="file"
               accept="image/*"
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) setImageFile(file);
+                const file = e.target.files?.[0] || null;
+                setImageFile(file);
               }}
               className="w-full rounded-xl border px-3 py-2"
             />
+            <p className="text-xs text-muted-foreground">
+              Image will be converted to WebP automatically.
+            </p>
           </div>
 
-          {/* TENURE */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Tenure *</label>
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-sm font-medium">Tenure *</label>
+              <CreateTenureModal
+                onCreated={(item) => {
+                  setTenures((prev) =>
+                    [...prev, item].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                  );
+                  setTenureId(item.id);
+                }}
+              />
+            </div>
             <select
               value={tenureId}
               onChange={(e) => setTenureId(e.target.value)}
-              className="w-full rounded-xl border px-3 py-2"
+              className="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-black/10"
             >
               <option value="">Select tenure</option>
-              {tenures.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.label}
+              {tenures.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.label}
                 </option>
               ))}
             </select>
+            {tenures.length === 0 ? (
+              <p className="text-xs text-red-600">
+                No tenure found. Create one first.
+              </p>
+            ) : null}
           </div>
 
-          {/* TEAM TYPE */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Team Type *</label>
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-sm font-medium">Team Type *</label>
+              <CreateCommitteeMetaModal
+                type="teamType"
+                onCreated={(item) => {
+                  setTeamTypes((prev) =>
+                    [...prev, item].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                  );
+                  setTeamTypeId(item.id);
+                }}
+              />
+            </div>
             <select
               value={teamTypeId}
               onChange={(e) => setTeamTypeId(e.target.value)}
-              className="w-full rounded-xl border px-3 py-2"
+              className="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-black/10"
             >
               <option value="">Select team type</option>
-              {teamTypes.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
+              {teamTypes.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
                 </option>
               ))}
             </select>
+            {teamTypes.length === 0 ? (
+              <p className="text-xs text-red-600">
+                No team type found. Create one first.
+              </p>
+            ) : null}
           </div>
 
-          {/* GROUP */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Group *</label>
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-sm font-medium">Group *</label>
+              <CreateCommitteeMetaModal
+                type="group"
+                onCreated={(item) => {
+                  setGroups((prev) =>
+                    [...prev, item].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                  );
+                  setGroupId(item.id);
+                }}
+              />
+            </div>
             <select
               value={groupId}
               onChange={(e) => setGroupId(e.target.value)}
-              className="w-full rounded-xl border px-3 py-2"
+              className="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-black/10"
             >
               <option value="">Select group</option>
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
+              {groups.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
                 </option>
               ))}
             </select>
+            {groups.length === 0 ? (
+              <p className="text-xs text-red-600">
+                No group found. Create one first.
+              </p>
+            ) : null}
           </div>
 
-          {/* ORDER */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Order</label>
             <input
               type="number"
+              min={0}
               value={order}
               onChange={(e) => setOrder(e.target.value)}
-              className="w-full rounded-xl border px-3 py-2"
+              className="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-black/10"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <input
+            id="isActive"
             type="checkbox"
             checked={isActive}
             onChange={(e) => setIsActive(e.target.checked)}
           />
-          <label className="text-sm font-medium">Active</label>
+          <label htmlFor="isActive" className="text-sm font-medium">
+            Active
+          </label>
         </div>
 
-        <button
-          type="submit"
-          disabled={!canSubmit || mutation.isPending}
-          className="rounded-xl bg-black px-4 py-2 text-white"
-        >
-          {mutation.isPending ? "Creating..." : "Create Member"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={!canSubmit || mutation.isPending}
+            className="rounded-xl bg-black px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {mutation.isPending ? "Creating..." : "Create Member"}
+          </button>
+
+          <Link
+            href="/admin/committee-members"
+            className="rounded-xl border px-4 py-2 text-sm font-medium hover:bg-muted"
+          >
+            Cancel
+          </Link>
+        </div>
       </form>
     </div>
   );

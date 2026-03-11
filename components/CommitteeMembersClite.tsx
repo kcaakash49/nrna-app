@@ -106,11 +106,12 @@ export default function CommitteeMembersClient() {
                       <div className="relative h-12 w-12 overflow-hidden rounded-full border bg-muted">
                         {member.imageUrl ? (
                           <Image
-                            src={member.imageUrl}
+                            src={`${process.env.NEXT_PUBLIC_BASE_URL}${member.imageUrl}`}
                             alt={member.name}
                             fill
                             className="object-cover"
                             sizes="48px"
+                            unoptimized={process.env.NODE_ENV !== "production"}
                           />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
