@@ -14,9 +14,6 @@ const PAGE_SIZE = 10;
 async function fetchCommitteeMembers(page: number): Promise<CommitteeMembersResponse> {
   const res = await fetch(
     `/api/admin/committee-members?page=${page}&pageSize=${PAGE_SIZE}`,
-    {
-      cache: "no-store",
-    }
   );
 
   const json: CommitteeMembersResponse = await res.json();
