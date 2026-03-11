@@ -73,8 +73,8 @@ export async function GET(req: NextRequest) {
         totalPages: Math.ceil(total / pageSize),
       },
     };
-
-    return NextResponse.json(data, { status: 200, headers: { "Cache-Control": "public, max-age=3600"} });
+   
+    return NextResponse.json(data, { status: 200});
   } catch (error) {
     console.error("GET /api/admin/committee-members error:", error);
     return NextResponse.json(
