@@ -101,6 +101,7 @@ model User {
   updatedSettings  SiteSetting[]  @relation("SettingUpdatedBy")
   auditLogs        AuditLog[]
   loginSession     AdminSession[]
+  committeeMembers CommitteeMember[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -508,4 +509,82 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+
+//Committee Memebers Tables
+model Tenure {
+  id        String             @id @default(cuid())
+  label     String             @unique // 2017-2019
+  startYear Int?
+  endYear   Int?
+  order     Int                @default(0)
+  isActive  Boolean            @default(true)
+
+  members   CommitteeMember[]
+
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([isActive, order])
+}
+
+model TeamType {
+  id        String             @id @default(cuid())
+  name      String             @unique
+  order     Int                @default(0)
+  isActive  Boolean            @default(true)
+
+  members   CommitteeMember[]
+
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([isActive, order])
+}
+
+model CommitteeGroup {
+  id        String             @id @default(cuid())
+  name      String             @unique
+  order     Int                @default(0)
+  isActive  Boolean            @default(true)
+
+  members   CommitteeMember[]
+
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@index([isActive, order])
+}
+
+model CommitteeMember {
+  id          String   @id @default(cuid())
+
+  name        String
+  imageUrl    String
+  designation String
+  country     String?
+
+
+  tenureId    String
+  tenure      Tenure   @relation(fields: [tenureId], references: [id], onDelete: Restrict)
+
+  teamTypeId  String
+  teamType    TeamType @relation(fields: [teamTypeId], references: [id], onDelete: Restrict)
+
+  groupId     String
+  group       CommitteeGroup @relation(fields: [groupId], references: [id], onDelete: Restrict)
+
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenureId, teamTypeId, groupId])
+  @@index([createdById])
+  @@index([isActive, order])
 }

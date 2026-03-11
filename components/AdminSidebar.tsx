@@ -39,6 +39,10 @@ const navSections = [
     {
         name: "Site Settings",
         path: "/admin/site-settings"
+    },
+    {
+        name: "Committee Members",
+        path: "/admin/committee-members"
     }
    
 ];

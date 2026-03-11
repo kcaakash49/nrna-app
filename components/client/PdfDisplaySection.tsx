@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Eye } from "lucide-react";
 
 export async function getLatestPdfMedia() {
+
   const pdfs = await prisma.media.findMany({
     where: {
       mimeType: {
